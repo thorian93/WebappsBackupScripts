@@ -17,7 +17,7 @@ set -e
 # Variables:
 nextcloud_path="/var/www/nextcloud"
 nextcloud_data_path="/var/www/nextcloud/data"
-backup_data="false"
+backup_files="false"
 backup_target="/tmp/nextcloud_backup"
 logfile="/tmp/nextcloud_backup.log"
 exe_rsync="$(command -v rsync)"
@@ -31,7 +31,7 @@ database_user=""
 database_pass=""
 webserver_user="www-data"
 
-while getopts ":m:t:d:u:p:d" opt; do
+while getopts ":m:t:d:u:p:f" opt; do
   case $opt in
     m)
       nextcloud_path="$OPTARG"
@@ -48,8 +48,8 @@ while getopts ":m:t:d:u:p:d" opt; do
     p)
       database_pass="$OPTARG"
       ;;
-    d)
-      backup_data="true"
+    f)
+      backup_files="true"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -65,7 +65,7 @@ done
 # Functions:
 
 initialize() {
-    if [ ! -d ${backup_target} ]
+    if [ ! -d "${backup_target}" ]
     then
         echo "Creating backup target: ${backup_target}"
         mkdir -p "${backup_target}"
@@ -74,7 +74,7 @@ initialize() {
     then
         echo 'No nextcloud Installation found!' ; exit 1
     fi
-    if [ -z ${database_name} ]
+    if [ -z "${database_name}" ]
     then
         echo 'No nextcloud Database specified!' ; exit 1
     fi
@@ -93,7 +93,7 @@ backup_app() {
     ${exe_rsync} ${opts_rsync} --exclude="${nextcloud_data_path}"  "${nextcloud_path}/" "${backup_target}/app/"
 }
 
-backup_data() {
+backup_files() {
     echo "$(date) - Backup Data"
     ${exe_rsync} ${opts_rsync} "${nextcloud_data_path}" "${backup_target}/data"
 }
@@ -110,8 +110,8 @@ finish () {
 initialize 2>&1|tee -a $logfile
 backup_database 2>&1|tee -a $logfile
 backup_app 2>&1|tee -a $logfile
-if [ "${backup_data}" == "true" ]
+if [ "${backup_files}" == "true" ]
 then
-  backup_data 2>&1|tee -a $logfile
+  backup_files 2>&1|tee -a $logfile
 fi
 finish 2>&1|tee -a $logfile
