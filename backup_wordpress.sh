@@ -28,9 +28,9 @@ database_name=""
 database_user=""
 database_pass=""
 
-while getopts ":m:t:d:u:p:" opt; do
+while getopts ":s:t:d:u:p:h" opt; do
   case $opt in
-    m)
+    s)
       wordpress_path="$OPTARG"
       ;;
     t)
@@ -45,6 +45,9 @@ while getopts ":m:t:d:u:p:" opt; do
     p)
       database_pass="$OPTARG"
       ;;
+    h)
+      print_help="true"
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -58,7 +61,7 @@ done
 
 # Functions:
 
-initialize() {
+_initialize() {
     if [ ! -d "${backup_target}" ]
     then
         echo "Creating backup target: ${backup_target}"
@@ -75,25 +78,40 @@ initialize() {
     echo "$(date) - Ready to take off"
 }
 
-backup_database() {
+_backup_database() {
     echo "$(date) - Dumping Database"
     ${exe_mysqldump} ${opts_mysqldump} "${database_name}" -u"${database_user}" -p"${database_pass}" > "${backup_target}/wordpress_db_backup.sql"
 }
 
-backup_files() {
+_backup_files() {
     echo "$(date) - Backup Files"
     ${exe_rsync} ${opts_rsync} "${wordpress_path}/" "${backup_target}/files/"
 }
 
-finish () {
+_finish () {
     echo "$(date) - Compress Backup"
     ${exe_tar} ${opts_tar} "${backup_target}.tar.gz" "${backup_target}"
     echo "$(date) - All Done"
 }
 
+_help() {
+    echo '#######################################################################################'
+    echo '# -s    The source of the files. Referes to your webapp installation.                 #'
+    echo '# -t    The target for the backup. Backup files will be created under this directory. #'
+    echo '# -d    Database to backup.                                                           #'
+    echo '# -u    Database user.                                                                #'
+    echo '# -p    Database password.                                                            #'
+    echo '# -h    Print this help message.                                                      #'
+    echo '#######################################################################################'
+}
+
 # Main:
-initialize 2>&1|tee -a $logfile
-backup_database 2>&1|tee -a $logfile
-backup_app 2>&1|tee -a $logfile
-backup_data 2>&1|tee -a $logfile
-finish 2>&1|tee -a $logfile
+if [ "${print_help}" == "true" ]
+then
+  _help && exit 0
+fi
+_initialize 2>&1|tee -a $logfile
+_backup_database 2>&1|tee -a $logfile
+_backup_app 2>&1|tee -a $logfile
+_backup_data 2>&1|tee -a $logfile
+_finish 2>&1|tee -a $logfile

@@ -31,9 +31,9 @@ database_user=""
 database_pass=""
 webserver_user="www-data"
 
-while getopts ":m:t:d:u:p:f" opt; do
+while getopts ":s:t:d:u:p:fh" opt; do
   case $opt in
-    m)
+    s)
       nextcloud_path="$OPTARG"
       ;;
     t)
@@ -51,6 +51,9 @@ while getopts ":m:t:d:u:p:f" opt; do
     f)
       backup_files="true"
       ;;
+    h)
+      print_help="true"
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -64,7 +67,7 @@ done
 
 # Functions:
 
-initialize() {
+_initialize() {
     if [ ! -d "${backup_target}" ]
     then
         echo "Creating backup target: ${backup_target}"
@@ -83,22 +86,22 @@ initialize() {
 	sudo -u "${webserver_user}" php "${nextcloud_path}/occ" maintenance:mode --on
 }
 
-backup_database() {
+_backup_database() {
     echo "$(date) - Dumping Database"
     ${exe_mysqldump} ${opts_mysqldump} "${database_name}" -u"${database_user}" -p"${database_pass}" > "${backup_target}/nextcloud_db_backup.sql"
 }
 
-backup_app() {
+_backup_app() {
     echo "$(date) - Backup App"
     ${exe_rsync} ${opts_rsync} --exclude="${nextcloud_data_path}"  "${nextcloud_path}/" "${backup_target}/app/"
 }
 
-backup_files() {
+_backup_files() {
     echo "$(date) - Backup Data"
     ${exe_rsync} ${opts_rsync} "${nextcloud_data_path}" "${backup_target}/data"
 }
 
-finish () {
+_finish () {
   echo "$(date) - Compress Backup"
   ${exe_tar} ${opts_tar} "${backup_target}.tar.gz" "${backup_target}"
 	echo "$(date) - Disabling Maintenance Mode"
@@ -106,12 +109,27 @@ finish () {
   echo "$(date) - All Done"
 }
 
+_help() {
+    echo '#######################################################################################'
+    echo '# -s    The source of the files. Referes to your webapp installation.                 #'
+    echo '# -t    The target for the backup. Backup files will be created under this directory. #'
+    echo '# -d    Database to backup.                                                           #'
+    echo '# -u    Database user.                                                                #'
+    echo '# -p    Database password.                                                            #'
+    echo '# -h    Print this help message.                                                      #'
+    echo '#######################################################################################'
+}
+
 # Main:
-initialize 2>&1|tee -a $logfile
-backup_database 2>&1|tee -a $logfile
-backup_app 2>&1|tee -a $logfile
+if [ "${print_help}" == "true" ]
+then
+  _help && exit 0
+fi
+_initialize 2>&1|tee -a $logfile
+_backup_database 2>&1|tee -a $logfile
+_backup_app 2>&1|tee -a $logfile
 if [ "${backup_files}" == "true" ]
 then
-  backup_files 2>&1|tee -a $logfile
+  _backup_files 2>&1|tee -a $logfile
 fi
-finish 2>&1|tee -a $logfile
+_finish 2>&1|tee -a $logfile
