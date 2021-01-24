@@ -24,17 +24,17 @@ exe_tar="$(command -v tar)"
 opts_tar="-caf"
 exe_mysqldump="$(command -v mysqldump)"
 opts_mysqldump="--add-drop-table"
-database_name=""
-database_user=""
-database_pass=""
+database_name=''
+database_user=''
+database_pass=''
 
 while getopts ":s:t:d:u:p:h" opt; do
   case $opt in
     s)
-      wordpress_path="$OPTARG"
+      wordpress_path="${OPTARG%/}"
       ;;
     t)
-      backup_target="$OPTARG"
+      backup_target="${OPTARG%/}"
       ;;
     d)
       database_name="$OPTARG"
@@ -79,7 +79,7 @@ _initialize() {
 }
 
 _backup_database() {
-    echo "$(date) - Dumping Database"
+    echo "$(date) - Dump Database"
     ${exe_mysqldump} ${opts_mysqldump} "${database_name}" -u"${database_user}" -p"${database_pass}" > "${backup_target}/wordpress_db_backup.sql"
 }
 
@@ -112,6 +112,5 @@ then
 fi
 _initialize 2>&1|tee -a $logfile
 _backup_database 2>&1|tee -a $logfile
-_backup_app 2>&1|tee -a $logfile
-_backup_data 2>&1|tee -a $logfile
+_backup_files 2>&1|tee -a $logfile
 _finish 2>&1|tee -a $logfile

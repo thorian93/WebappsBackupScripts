@@ -22,17 +22,17 @@ exe_tar="$(command -v tar)"
 opts_tar="-caf"
 exe_mysqldump="$(command -v mysqldump)"
 opts_mysqldump="--extended-insert --no-autocommit --quick --single-transaction"
-database_name=""
-database_user=""
-database_pass=""
+database_name=''
+database_user=''
+database_pass=''
 
 while getopts ":s:t:d:u:p:h" opt; do
   case $opt in
     s)
-      matomo_path="$OPTARG"
+      matomo_path="${OPTARG%/}"
       ;;
     t)
-      backup_target="$OPTARG"
+      backup_target="${OPTARG%/}"
       ;;
     d)
       database_name="$OPTARG"
@@ -77,7 +77,7 @@ _initialize() {
 }
 
 _backup_database() {
-    echo "$(date) - Dumping Database"
+    echo "$(date) - Dump Database"
     ${exe_mysqldump} ${opts_mysqldump} "${database_name}" -u"${database_user}" -p"${database_pass}" > "${backup_target}/matomo_db_backup.sql"
 }
 

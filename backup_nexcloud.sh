@@ -26,18 +26,18 @@ exe_tar="$(command -v tar)"
 opts_tar="-caf"
 exe_mysqldump="$(command -v mysqldump)"
 opts_mysqldump="--single-transaction"
-database_name=""
-database_user=""
-database_pass=""
+database_name=''
+database_user=''
+database_pass=''
 webserver_user="www-data"
 
 while getopts ":s:t:d:u:p:fh" opt; do
   case $opt in
     s)
-      nextcloud_path="$OPTARG"
+      nextcloud_path="${OPTARG%/}"
       ;;
     t)
-      backup_target="$OPTARG"
+      backup_target="${OPTARG%/}"
       ;;
     d)
       database_name="$OPTARG"
@@ -84,10 +84,12 @@ _initialize() {
     echo "$(date) - Ready to take off"
 	echo "$(date) - Enabling Maintenance Mode"
 	sudo -u "${webserver_user}" php "${nextcloud_path}/occ" maintenance:mode --on
+  echo "$(date) - Waiting for 10 seconds to ensure clients notice"
+  sleep 10
 }
 
 _backup_database() {
-    echo "$(date) - Dumping Database"
+    echo "$(date) - Dump Database"
     ${exe_mysqldump} ${opts_mysqldump} "${database_name}" -u"${database_user}" -p"${database_pass}" > "${backup_target}/nextcloud_db_backup.sql"
 }
 
