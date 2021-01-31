@@ -27,6 +27,7 @@ opts_tar="-caf"
 exe_mysqldump="$(command -v mysqldump)"
 opts_mysqldump="--single-transaction"
 database_name=''
+database_host='localhost'
 database_user=''
 database_pass=''
 webserver_user="www-data"
@@ -90,7 +91,7 @@ _initialize() {
 
 _backup_database() {
     echo "$(date) - Dump Database"
-    ${exe_mysqldump} ${opts_mysqldump} "${database_name}" -u"${database_user}" -p"${database_pass}" > "${backup_target}/nextcloud_db_backup.sql"
+    ${exe_mysqldump} ${opts_mysqldump} "${database_name}" -h"${database_host}" -u"${database_user}" -p"${database_pass}" > "${backup_target}/nextcloud_db_backup.sql"
 }
 
 _backup_app() {
